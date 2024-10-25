@@ -3,7 +3,7 @@
 # 脚本功能：
 # 1. 打印自定义安装过程的开始信息。
 # 2. 检查设备架构，并根据架构类型打印相应信息或终止安装。
-# 3. 检查 Android API 版本，确保版本在支持范围内，否则终止安装。
+# 3. 检查 Android API 版本，确保版本在支持范围内，否则终.安装。
 # 4. 设置指定文件和目录的权限。
 # 5. 打印自定义安装过程的完成信息。
 #
@@ -22,49 +22,46 @@ ui_print "开始安装..."
 
 # 检查设备架构
 case "$ARCH" in
-    "arm" | "arm64")
-        ui_print "设备架构为 ARM"
+    "arm")
+        ui_print "设备架构为 ARM 32位"
+        abort "不支持32位设备架构: $ARCH"
         ;;
-    "x86" | "x64")
-        ui_print "设备架构为 x86"
+    "arm64")
+        ui_print "设备架构为 ARM 64位"
+        ;;
+    "x86")
+        ui_print "设备架构为 x86 32位"
+        abort "不支持32位设备架构: $ARCH"
+        ;;
+    "x64")
+        ui_print "设备架构为 x86 64位"
         ;;
     *)
         abort "不支持的设备架构: $ARCH"
         ;;
 esac
-if $IS64BIT; then
-    ui_print "当前设备:64位"
-else
-    abort "不支持32位"
-fi
 
 ui_print "Android API 版本: $API"
 
-
-
-TUN_INFO=$(lsmod | grep tun)
-if [ -n "$TUN_INFO" ]; then
-    TUN_NAME=$(echo "$TUN_INFO" | awk '{print $1}')
-    TUN_SIZE=$(echo "$TUN_INFO" | awk '{print $2}')
-    TUN_USED=$(echo "$TUN_INFO" | awk '{print $3}')
-    ui_print "tun驱动名称: $TUN_NAME"
-    ui_print "tun驱动大小: $TUN_SIZE"
-    ui_print "tun驱动当前使用次数: $TUN_USED"
+if [ "$KSU" = "true" ]; then
+  ui_print "- kernelSU version: $KSU_VER ($KSU_VER_CODE)"
+elif [ "$APATCH" = "true" ]; then
+  APATCH_VER=$(cat "/data/adb/ap/version")
+  ui_print "- APatch version: $APATCH_VER"
+  ui_print "- KERNEL_VERSION: $KERNEL_VERSION"
+  ui_print "- KERNELPATCH_VERSION: $KERNELPATCH_VERSION"
 else
-    abort "不支持本设备"
+  ui_print "- Magisk version: $MAGISK_VER ($MAGISK_VER_CODE)"
 fi
 
 
+ui_print "模块安装目录: $MODPATH "
+
+ui_print "给你3秒,请记住模块安装目录"
+sleep 3
 
 
-# 设置文件权限
-
-set_perm "$MODPATH/boot-completed.sh" 0 0 0755
-set_perm_recursive "$MODPATH/system" 0 0 0755 0755
-
-ui_print "设置权限完成"
-
-
+# 以上写的非常通用
 # 可选
 start(){
 pkg="$1"

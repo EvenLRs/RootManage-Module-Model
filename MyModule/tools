@@ -1,0 +1,100 @@
+MODDIR=${0%/*}
+LOG_FILE="${MODDIR}/MagicNet.log"
+clash_config="${MODDIR}/config.yaml"
+mihomo="/system/bin/mihomo"
+
+function formatted_date() {
+    echo $(date +"%Y-%m-%d %H:%M:%S.%3N") # 2024-10-31 12:59:59.999  (year-month-day hour:minute:second.millisecond)
+}
+
+normal="\033[0m" # No Color
+orange="\033[1;38;5;208m"
+red="\033[1;31m"
+green="\033[1;32m"
+yellow="\033[1;33m"
+blue="\033[1;34m"
+
+
+log() {
+    # 确保日志文件存在
+    [ ! -f "${LOG_FILE}" ] && touch "${LOG_FILE}"
+
+    case $1 in
+        Info) color="${blue}" ;;
+        Error) color="${red}" ;;
+        Warning) color="${yellow}" ;;
+        *) color="${green}" ;;
+    esac
+    current_time=$(formatted_date)
+    message="${current_time} [$1]: $2"
+    if [ -t 1 ]; then
+        echo -e "${color}${message}${normal}"
+    else
+        echo "${message}" >> "${LOG_FILE}" 2>&1
+    fi
+}
+
+clean_old_logs() {
+    # 获取最新一行的时间
+    latest_time=$(tail -n 1 "${MODDIR}/MagicNet.log" | awk '{print $1 " " $2}')
+    
+    # 检查是否获取到时间
+    if [ -z "$latest_time" ]; then
+        return
+    fi
+
+    latest_timestamp=$(date -d "$latest_time" +%s 2>/dev/null)
+    
+    # 检查日期转换是否成功
+    if [ -z "$latest_timestamp" ]; then
+        return
+    fi
+
+    # 删除超过24小时的日志行
+    awk -v latest_timestamp="$latest_timestamp" '
+    {
+        log_time = $1 " " $2
+        gsub(/[-:]/, " ", log_time)
+        log_timestamp = mktime(log_time)
+        if (latest_timestamp - log_timestamp <= 86400) {
+            print $0
+        }
+    }' "${MODDIR}/MagicNet.log" > "${MODDIR}/MagicNet.log.tmp" && mv "${MODDIR}/MagicNet.log.tmp" "${MODDIR}/MagicNet.log"
+}
+
+create_tun() {
+    # 创建 /dev/net 目录
+    mkdir -p /dev/net
+
+    # 创建符号链接 /dev/net/tun 指向 /dev/tun
+    [ ! -L /dev/net/tun ] && ln -s /dev/tun /dev/net/tun
+
+    # 检查 /dev/net/tun 是否为字符设备
+    if [ ! -c "/dev/net/tun" ]; then
+        log Error "无法创建: /dev/net/tun.可能原因如下:"
+        log Warning "你的系统不支持 TUN/TAP 驱动."
+        log Warning "你的系统内核版本不兼容 TUN/TAP 驱动."        
+        exit 1
+    fi
+}
+mihomo_prepare(){
+  # check configuration file
+  if ! [ -f "${clash_config}" ]; then
+    log Error "configuration file ${clash_config} not found"
+    exit 1
+  else
+    log Info "config ${clash_config}"
+  fi
+}
+
+mihomo_run() {
+    log Info "启动 mihomo内核..."
+    mihomo_prepare
+
+    if [ -x "${mihomo}" ]; then
+        "${mihomo}" -f "${clash_config}" > "${LOG_FILE}" 2>&1
+    else
+        log Error "未找到/不可执行 ${mihomo}"
+        exit 1
+    fi
+}
