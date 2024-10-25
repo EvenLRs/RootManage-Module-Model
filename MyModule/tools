@@ -1,6 +1,6 @@
 MODDIR=${0%/*}
 LOG_FILE="${MODDIR}/MagicNet.log"
-clash_config="${MODDIR}/config.yaml"
+clash_config="${MODDIR}/clash/config.yaml"
 mihomo="/system/bin/mihomo"
 
 function formatted_date() {
