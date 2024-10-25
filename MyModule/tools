@@ -1,6 +1,7 @@
 MODDIR=${0%/*}
 LOG_FILE="${MODDIR}/MagicNet.log"
-clash_config="${MODDIR}/mihomo/config.yaml"
+mihomo_dir="${MODDIR}/mihomo/"
+mihomo_config="${MODDIR}/mihomo/config.yaml"
 mihomo="/system/bin/mihomo"
 
 function formatted_date() {
@@ -79,11 +80,11 @@ create_tun() {
 }
 mihomo_prepare(){
   # check configuration file
-  if ! [ -f "${clash_config}" ]; then
+  if ! [ -f "${mihomo_config}" ]; then
     log Error "configuration file ${clash_config} not found"
     exit 1
   else
-    log Info "config ${clash_config}"
+    log Info "config ${mihomo_config}"
   fi
 }
 
@@ -92,7 +93,7 @@ mihomo_run() {
     mihomo_prepare
 
     if [ -x "${mihomo}" ]; then
-        "${mihomo}" -f "${clash_config}" > "${LOG_FILE}" 2>&1
+        "${mihomo}" -d ${mihomo_dir} -f "${mihomo_config}" > "${LOG_FILE}" 2>&1
     else
         log Error "未找到/不可执行 ${mihomo}"
         exit 1
