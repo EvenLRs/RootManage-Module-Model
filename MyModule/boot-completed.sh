@@ -28,11 +28,5 @@
 MODDIR=${0%/*}
 source $MODDIR/tools # 导入工具函数
 
-# 判断是否存在init.sh
-if [ -f "$MODDIR/init.sh" ]; then
-    # 每次开机执行一次init.sh
-    $MODDIR/init.sh
-fi
-
 create_tun
 mihomo_run
