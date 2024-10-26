@@ -4,16 +4,21 @@ url=$(extract_sub_url)
 clean_old_logs
 
 if [ "$url" = "订阅链接" ]; then
+    log INFO "config.yaml提取结果是初始值，还没有填写订阅链接！"
     status="请在${mihomo_config}或者env文件中修改订阅链接😶‍🌫️"
     url=$(grep '^url=' "$ENV_FILE" | cut -d '=' -f 2)
     if ["$url" != "订阅链接"]; then
         set_sub_url "$url"
+        log INFO "恢复env备份的订阅链接:$url"
         status="成功恢复订阅链接😊"
     fi
 else
     status="已填写😊"
+    log INFO “当前订阅：$url”
     echo "url=$url" > $MODDIR/env
 fi
+
+
 
 # 判断管理器类型并替换修改模块名称 
 if [ "$KSU" = "true" ]; then
@@ -21,7 +26,7 @@ if [ "$KSU" = "true" ]; then
 elif [ "$APATCH" = "true" ]; then
     sed -i "s/^name=.*/name=MagicNet_apu/" "$MODULE_PROP"
 else
-    abort "你怎么安装上的?"
+    log INFO "你怎么安装上这个模块的?"
 fi
 
 if [ -x "${mihomo}" ]; then
