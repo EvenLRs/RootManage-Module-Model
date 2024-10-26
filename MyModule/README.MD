@@ -6,6 +6,7 @@
 ksu参考了a/b分区的设计，有个叫做modules_update的文件夹，如果能够正常开机才会显示到modules文件夹
 # 使用方法
 # 刷入本模块-重启，前往/data/adb/modules/MagicNet/mihomo/config.yaml填链接🔗
+# 或者模块目录下的env文件也行
 
 本模块仅供学习，请24小时内删除
 不提供相关链接，请自觉从合法渠道获取
