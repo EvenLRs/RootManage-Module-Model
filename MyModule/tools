@@ -7,18 +7,26 @@ MODULE_PROP="$MODDIR/module.prop"
 ENV_FILE="$MODDIR/env"
 
 extract_sub_url() {
-    url=$(awk '/proxy-providers:/, /^[[:space:]]*[^[:space:]]/ {if ($1 == "url:") {print $2; exit}}' "${mihomo_config}")
+    # 精确提取 myclash 节点的 url
+    url=$(grep -A 4 '"myclash":' "${mihomo_config}" | grep 'url:' | awk '{print $2}' | tr -d '"')
     echo "${url}"
 }
+
 set_sub_url() {
     new_url=$1
     if [ -z "$new_url" ]; then
         log Error "新 URL 不能为空"
         return 1
     fi
-    # 使用 sed 替换 url
-    sed -i '/proxy-providers:/,/^[[:space:]]*[^[:space:]]/ s|^\([[:space:]]*url:\).*|\1 '"$new_url"'|' "${mihomo_config}"
-    log Info "已将订阅链接更新为: ${new_url}"
+    # 使用 sed 在 myclash 节点范围内替换 url
+    sed -i '/"myclash":/,/url:/s|url:.*|url: "'"$new_url"'"|' "${mihomo_config}"
+    
+    log INFO "已将订阅链接更新为: ${new_url}"
+}
+
+set_module_description(){
+    local new_description="$1"
+    sed -i "s/^description=.*/description=$(printf '%s' "${new_description//\//\\/}")/" "${MODULE_PROP}"
 }
 
 formatted_date() {
@@ -32,13 +40,11 @@ green="\033[1;32m"
 yellow="\033[1;33m"
 blue="\033[1;34m"
 
-
 log() {
-    # 确保日志文件存在
     [ ! -f "${LOG_FILE}" ] && touch "${LOG_FILE}"
 
     case $1 in
-        Info) color="${blue}" ;;
+        INFO) color="${blue}" ;;
         Error) color="${red}" ;;
         Warning) color="${yellow}" ;;
         *) color="${green}" ;;
@@ -53,22 +59,12 @@ log() {
 }
 
 clean_old_logs() {
-    # 获取最新一行的时间
     latest_time=$(tail -n 1 "${MODDIR}/MagicNet.log" | awk '{print $1 " " $2}')
-    
-    # 检查是否获取到时间
-    if [ -z "$latest_time" ]; then
-        return
-    fi
+    [ -z "$latest_time" ] && return
 
     latest_timestamp=$(date -d "$latest_time" +%s 2>/dev/null)
-    
-    # 检查日期转换是否成功
-    if [ -z "$latest_timestamp" ]; then
-        return
-    fi
+    [ -z "$latest_timestamp" ] && return
 
-    # 删除超过24小时的日志行
     awk -v latest_timestamp="$latest_timestamp" '
     {
         log_time = $1 " " $2
@@ -81,40 +77,60 @@ clean_old_logs() {
 }
 
 create_tun() {
-    # 创建 /dev/net 目录
     mkdir -p /dev/net
-    log INFO “创建/dev/net/目录”
+    log INFO "创建/dev/net/目录"
 
-    # 创建符号链接 /dev/net/tun 指向 /dev/tun
     [ ! -L /dev/net/tun ] && ln -s /dev/tun /dev/net/tun
-    log INFO “创建/dev/net/tun指向/dev/tun”
-    # 检查 /dev/net/tun 是否为字符设备
+    log INFO "创建/dev/net/tun符号链接"
+    
     if [ ! -c "/dev/net/tun" ]; then
-        log Error "无法创建: /dev/net/tun.可能原因如下:"
-        log Warning "你的系统不支持 TUN/TAP 驱动."
-        log Warning "你的系统内核版本不兼容 TUN/TAP 驱动."        
+        log Error "无法创建 /dev/net/tun，可能的原因："
+        log Warning "系统不支持 TUN/TAP 驱动或内核不兼容"
         exit 1
     fi
-    log INFO “/dev/net/tun为字符设备，检查通过”
+    log INFO "/dev/net/tun 为字符设备，检查通过"
 }
-mihomo_prepare(){
-  # check configuration file
-  if ! [ -f "${mihomo_config}" ]; then
-    log Error "configuration file ${clash_config} not found"
-    exit 1
-  else
-    log Info "config： ${mihomo_config}"
-  fi
+
+mihomo_prepare() {
+    if ! [ -f "${mihomo_config}" ]; then
+        log Error "配置文件 ${mihomo_config} 不存在"
+        exit 1
+    else
+        log INFO "加载配置文件: ${mihomo_config}"
+        
+        # 循环提取URL并进行判断
+        while true; do
+            extracted_url=$(extract_sub_url)
+            if [ "$extracted_url" != "订阅链接" ]; then
+                log INFO "提取到的订阅链接: ${extracted_url}"
+                break
+            else   
+                log INFO "mihomo等待一个订阅链接 间隔10秒"      
+                set_module_description "正在等待一个订阅链接📝 请前往修改 $ENV_FILE 或者 $mihomo_config 读取到的URL:$extracted_url"
+
+                set_sub_url $(grep "^url=" "$ENV_FILE" | cut -d'=' -f2)
+                log INFO "尝试从备份恢复"   
+            fi
+            # 等你填订阅链接呢
+            sleep 10
+        done
+    fi
+    log INFO "备份链接"
+    echo "url=$extracted_url" > $ENV_FILE
+    
 }
 
 mihomo_run() {
-    log Info "启动 mihomo内核..."
+    log INFO "启动 mihomo 内核..."
     mihomo_prepare
 
     if [ -x "${mihomo}" ]; then
-        "${mihomo}" -d ${mihomo_dir} -f "${mihomo_config}" >> "${LOG_FILE}" 2>&1
+        # 启动 mihomo 内核，并将日志记录到指定文件
+        set_module_description "mihomo启动!🛡️[内核启动时间🕓]-$(date '+%Y-%m-%d %H:%M:%S') [mihomo]-$(${mihomo} -v) 请注意查看日志!"
+        "${mihomo}" -d "${mihomo_dir}" -f "${mihomo_config}" >> "${LOG_FILE}" 2>&1
     else
-        log Error "未找到/不可执行 ${mihomo}"
+        log Error "未找到或不可执行的 ${mihomo}"
         exit 1
     fi
+
 }
