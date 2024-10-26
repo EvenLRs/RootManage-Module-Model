@@ -16,6 +16,8 @@ else
     status="已填写😊"
     log INFO “当前订阅：$url”
     echo "url=$url" > $MODDIR/env
+    cp $MODDIR/env $TMPDIR/MagicNet/env
+    log INFO "成功将$url备份至$TMPDIR/MagicNet/env" 
 fi
 
 
