@@ -26,9 +26,13 @@
 # 注意这个sh文件是ksu新增的,因此不支持magisk(apu的系统模块功能借鉴的ksu)
 
 MODDIR=${0%/*}
-
 source $MODDIR/tools # 导入工具函数
 
-create_tun
+# 判断是否存在init.sh
+if [ -f "$MODDIR/init.sh" ]; then
+    # 每次开机执行一次init.sh
+    $MODDIR/init.sh
+fi
 
+create_tun
 mihomo_run

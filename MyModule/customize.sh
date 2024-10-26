@@ -10,15 +10,24 @@
 # 脚本详细说明：
 # - ui_print: 用于在安装过程中打印信息到控制台。
 # - case "$ARCH" in ... esac: 检查设备架构，支持 "arm", "arm64", "x86", "x64" 四种架构。
-# - abort: 用于终止安装过程并打印错误信息。
+# - abort: 用于终止安装过程并打印错.信息。
 # - if [ "$API" -lt 23 ]; then ... fi: 检查 Android API 版本，要求版本不低于 23。
 # - set_perm: 设置单个文件的权限。
 # - set_perm_recursive: 递归设置目录及其内容的权限。
 
-
-
 # 打印信息到控制台
 ui_print "开始安装..."
+
+# 更新模块恢复订阅链接
+if [-d "$MODPATH" ]; then
+  ui_print ": 开始更新模块 -- 备份订阅链接到临时目录"
+  if [ -f "$MODPATH/env" ]; then
+      cp -f "$MODPATH/env" "$TMPDIR/MagicNet/env" # 恢复订阅链接
+      ui_print "原订阅链接保存在: $TMPDIR/MagicNet/env"
+  else
+      ui_print "源文件 $MODPATH/env 不存在，跳过备份订阅链接"
+  fi
+fi
 
 # 检查设备架构
 case "$ARCH" in
@@ -55,7 +64,7 @@ else
 fi
 
 
-ui_print "模块安装目录: $MODPATH "
+ui_print "模块目录: $MODPATH "
 
 ui_print "给你3秒,请记住模块安装目录"
 sleep 3

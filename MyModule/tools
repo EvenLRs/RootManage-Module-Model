@@ -3,9 +3,26 @@ LOG_FILE="${MODDIR}/MagicNet.log"
 mihomo_dir="${MODDIR}/mihomo/"
 mihomo_config="${MODDIR}/mihomo/config.yaml"
 mihomo="/system/bin/mihomo"
+MODULE_PROP="$MODDIR/module.prop"
+ENV_FILE="$MODDIR/env"
 
-function formatted_date() {
-    echo $(date +"%Y-%m-%d %H:%M:%S.%3N") # 2024-10-31 12:59:59.999  (year-month-day hour:minute:second.millisecond)
+extract_sub_url() {
+    url=$(awk '/proxy-providers:/, /^[[:space:]]*[^[:space:]]/ {if ($1 == "url:") {print $2; exit}}' "${mihomo_config}")
+    echo "${url}"
+}
+set_sub_url() {
+    new_url=$1
+    if [ -z "$new_url" ]; then
+        log Error "新 URL 不能为空"
+        return 1
+    fi
+    # 使用 sed 替换 url
+    sed -i '/proxy-providers:/,/^[[:space:]]*[^[:space:]]/ s|^\([[:space:]]*url:\).*|\1 '"$new_url"'|' "${mihomo_config}"
+    log Info "已将订阅链接更新为: ${new_url}"
+}
+
+formatted_date() {
+    date +"%Y-%m-%d %H:%M:%S.%3N"
 }
 
 normal="\033[0m" # No Color
@@ -93,7 +110,7 @@ mihomo_run() {
     mihomo_prepare
 
     if [ -x "${mihomo}" ]; then
-        "${mihomo}" -d ${mihomo_dir} -f "${mihomo_config}" > "${LOG_FILE}" 2>&1
+        "${mihomo}" -d ${mihomo_dir} -f "${mihomo_config}" >> "${LOG_FILE}" 2>&1
     else
         log Error "未找到/不可执行 ${mihomo}"
         exit 1
