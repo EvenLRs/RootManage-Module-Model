@@ -83,10 +83,11 @@ clean_old_logs() {
 create_tun() {
     # 创建 /dev/net 目录
     mkdir -p /dev/net
+    log INFO “创建/dev/net/目录”
 
     # 创建符号链接 /dev/net/tun 指向 /dev/tun
     [ ! -L /dev/net/tun ] && ln -s /dev/tun /dev/net/tun
-
+    log INFO “创建/dev/net/tun指向/dev/tun”
     # 检查 /dev/net/tun 是否为字符设备
     if [ ! -c "/dev/net/tun" ]; then
         log Error "无法创建: /dev/net/tun.可能原因如下:"
@@ -94,6 +95,7 @@ create_tun() {
         log Warning "你的系统内核版本不兼容 TUN/TAP 驱动."        
         exit 1
     fi
+    log INFO “/dev/net/tun为字符设备，检查通过”
 }
 mihomo_prepare(){
   # check configuration file
@@ -101,7 +103,7 @@ mihomo_prepare(){
     log Error "configuration file ${clash_config} not found"
     exit 1
   else
-    log Info "config ${mihomo_config}"
+    log Info "config： ${mihomo_config}"
   fi
 }
 
