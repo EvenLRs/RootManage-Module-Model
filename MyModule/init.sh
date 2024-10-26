@@ -6,6 +6,10 @@ clean_old_logs
 if [ "$url" = "订阅链接" ]; then
     status="请在${mihomo_config}或者env文件中修改订阅链接😶‍🌫️"
     url=$(grep '^url=' "$ENV_FILE" | cut -d '=' -f 2)
+    if ["$url" != "订阅链接"]; then
+        set_sub_url "$url"
+        status="成功恢复订阅链接😊"
+    fi
 else
     status="已填写😊"
     echo "url=$url" > $MODDIR/env

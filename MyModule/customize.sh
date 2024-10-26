@@ -25,10 +25,10 @@ MagicNet="/data/adb/modules/MagicNet"
 if [-d "$MagicNet" ]; then
   ui_print ": 开始更新模块 -- 备份订阅链接到临时目录"
   if [ -f "$MagicNet/env" ]; then
-      cp -f "$MagicNet/env" "$TMPDIR/MagicNet/env" # 恢复订阅链接
-      ui_print "原订阅链接保存在: $TMPDIR/MagicNet/env"
+    cp -f "$MagicNet/env" "$TMPDIR/MagicNet/env" # 恢复订阅链接
+    ui_print "原订阅链接保存在: $TMPDIR/MagicNet/env"
   else
-      ui_print "源文件 $MagicNet/env 不存在，跳过备份订阅链接"
+    ui_print "源文件 $MagicNet/env 不存在，跳过备份订阅链接"
   fi
 fi
 
