@@ -100,6 +100,8 @@ dns:   # DNS泄露问题
     - '*.*.xboxlive.com'
     - 'lens.l.google.com'
     - '*.mcdn.bilivideo.cn'
+    - '*.xiaomi.com'
+    - 'weatherapi.market.xiaomi.com'
     - 'localhost.ptlogin2.qq.com'
     - WORKGROUP
     
